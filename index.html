@@ -241,7 +241,7 @@
     <h1>So many drums</h1>
     <div class="controls">
       <div class="knob-group">
-        <input type="range" min="80" max="160" value="120" id="bpmKnob" />
+        <input type="range" min="40" max="160" value="120" id="bpmKnob" />
         <div>BPM: <span id="bpmDisplay">120</span></div>
       </div>
       <div class="length-buttons">
@@ -447,7 +447,7 @@
       startKnobInteraction(e.touches[0].clientX, e.touches[0].clientY);
     });
 
-    bpm = Math.floor(80 + Math.random() * 80);
+    bpm = Math.floor(40 + Math.random() * 120);
     bpmKnob.value = bpm;
     bpmDisplay.textContent = bpm;
     reseedChannels(0);

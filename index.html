@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>So many drums</title>
   <style>
     body {
@@ -124,61 +126,106 @@
       display: flex;
       gap: 10px;
     }
-    
     .corner-button {
-  position: fixed;
-  background: none;
-  border: 1px solid white;
-  width: 3rem;
-  height: 3rem;
-  font-size: 1.5rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  text-decoration: none;
-  color: inherit;
-}
-#helpButton {
-  bottom: 2rem;
-  left: 2rem;
-}
-.modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 1000;
-}
+      position: fixed;
+      background: none;
+      border: 1px solid white;
+      width: 3rem;
+      height: 3rem;
+      font-size: 1.5rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      text-decoration: none;
+      color: inherit;
+    }
+    #helpButton {
+      bottom: 2rem;
+      left: 2rem;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+    }
+    .modal-content {
+      background-color: black;
+      margin: 5% auto;
+      padding: 2rem;
+      width: 90%;
+      max-width: 700px;
+      border: 1px solid white;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+      position: relative;
+    }
+    .close-button {
+      position: absolute;
+      right: 1rem;
+      top: 0.5rem;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
 
-.modal-content {
-  background-color: black;
-  margin: 5% auto;
-  padding: 2rem;
-  width: 90%;
-  max-width: 700px;
-  border: 1px solid white;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
-  position: relative;
-}
+@media (max-width: 768px) {
+  body {
+    flex-direction: column;
+    padding: 10px;
+    gap: 10px;
+  }
 
-.close-button {
-  position: absolute;
-  right: 1rem;
-  top: 0.5rem;
-  font-size: 1.5rem;
-  cursor: pointer;
+  .left-panel, .right-panel {
+    width: 100%;
+  }
+
+  .right-panel {
+    order: 1;
+    align-items: center;
+  }
+
+  h1 {
+    text-align: center;
+    margin-bottom: 10px;
+  }
+
+  .controls {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .left-panel {
+    order: 2;
+    align-items: center;
+  }
+
+  .big-knob {
+    width: 200px;
+    height: 200px;
+  }
+
+  .knob-buttons {
+    margin-top: 10px;
+  }
+
+  .channels {
+    grid-template-columns: 1fr;
+  }
+
+  .knob-display {
+    font-size: 24px;
+  }
 }
   </style>
 </head>
 <body>
   <button id="helpButton" class="corner-button">?</button>
   <a class="corner-button" href="/" id="backButton">←</a>
-
 
   <div class="left-panel">
     <div class="big-knob" id="bigKnob">
@@ -363,27 +410,41 @@
       reseedChannels(seedValue);
     }
 
-    let lastAngle = 0;
-    bigKnob.addEventListener("mousedown", (e) => {
+    function startKnobInteraction(startX, startY) {
       const rect = bigKnob.getBoundingClientRect();
       const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
 
       function moveHandler(me) {
-        const dx = me.clientX - centerX;
-        const dy = me.clientY - centerY;
+        const clientX = me.touches ? me.touches[0].clientX : me.clientX;
+        const clientY = me.touches ? me.touches[0].clientY : me.clientY;
+
+        const dx = clientX - centerX;
+        const dy = clientY - centerY;
         const angle = (Math.atan2(dy, dx) * 180) / Math.PI + 90;
         lastAngle = (angle + 360) % 360;
         updateKnobFromAngle(lastAngle);
       }
 
-      function upHandler() {
+      function endHandler() {
         window.removeEventListener("mousemove", moveHandler);
-        window.removeEventListener("mouseup", upHandler);
+        window.removeEventListener("mouseup", endHandler);
+        window.removeEventListener("touchmove", moveHandler);
+        window.removeEventListener("touchend", endHandler);
       }
 
       window.addEventListener("mousemove", moveHandler);
-      window.addEventListener("mouseup", upHandler);
+      window.addEventListener("mouseup", endHandler);
+      window.addEventListener("touchmove", moveHandler);
+      window.addEventListener("touchend", endHandler);
+    }
+
+    bigKnob.addEventListener("mousedown", (e) => {
+      startKnobInteraction(e.clientX, e.clientY);
+    });
+
+    bigKnob.addEventListener("touchstart", (e) => {
+      startKnobInteraction(e.touches[0].clientX, e.touches[0].clientY);
     });
 
     bpm = Math.floor(80 + Math.random() * 80);
@@ -406,33 +467,26 @@
         adjustSeed(-1);
       }
     });
-
-
   </script>
+
   <div id="helpModal" class="modal">
     <div class="modal-content">
       <span class="close-button" id="closeModal">&times;</span>
       <div class="modal-body">
         <p><strong>About this drum machine:</strong></p>
-        <p>“So Many Drums” is an 8-channel generative drum sequencer using a library of 1,024 unique sounds.</p>
-
-<p>Big Knob: Sets a random seed (0–9999) that defines sounds and patterns. Adjust by dragging, using ▲/▼ buttons, or keyboard arrows.</p>
-
-<p>Channels: Each has a 16-step pattern, mute/solo buttons, and volume/pan controls.</p>
-
-<p>Steps: Orange = active, Grey = muted, Red = soloed.</p>
-
-<p>New rhythms and textures emerge instantly with every seed change.</p>
-        <p>Sounds are generated by the python script in the repo. This project is by Tom Whitwell / Music Thing Modular and is intended to be part of the <a href="/">10,000 Drum Machines</a> series by <a href="https://maxy.world/" target="_blank">Maxwell Neely-Cohen</a>.</p>
+        <p>“So Many Drums” is a stupid 8-channel drum sequencer using a library of 1,024 unique sounds.</p>
+        <p>Big Knob: Sets a random seed (0–9999) that picks sounds and sets patterns. Adjust by dragging, using ▲/▼, or arrow keys.</p>
+        <p>Channels: Each has mute/solo buttons, and volume/pan controls that persist as you move the big knob.</p>
+        <p>Steps: Orange = active, Grey = muted, Red = soloed.</p>
+        <p>Sounds are generated by the python script in the repo. This machine is by <a href="https://www.musicthing.co.uk/">Tom Whitwell / Music Thing Modular</a> and is part of the <a href="/">10,000 Drum Machines</a> series by <a href="https://maxy.world/" target="_blank">Maxwell Neely-Cohen</a>.</p>
       </div>
     </div>
   </div>
-	<script>
-  const helpModal = document.getElementById('helpModal');
-  document.getElementById('helpButton').onclick = () => helpModal.style.display = 'block';
-  document.getElementById('closeModal').onclick = () => helpModal.style.display = 'none';
-  window.onclick = e => { if (e.target === helpModal) helpModal.style.display = 'none'; };
-</script>
-  
+  <script>
+    const helpModal = document.getElementById('helpModal');
+    document.getElementById('helpButton').onclick = () => helpModal.style.display = 'block';
+    document.getElementById('closeModal').onclick = () => helpModal.style.display = 'none';
+    window.onclick = e => { if (e.target === helpModal) helpModal.style.display = 'none'; };
+  </script>
 </body>
 </html>
